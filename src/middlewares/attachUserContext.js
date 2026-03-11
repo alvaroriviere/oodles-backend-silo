@@ -1,0 +1,106 @@
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY
+);
+
+// middlewares/attachUserContext.js
+const attachUserContext = async (req, res, next) => {
+    try {
+
+        const { user_id } = req.body;
+
+        if (!user_id) {
+            return next();
+        }
+
+        const { data: member, error } = await supabase
+            .from("member")
+            .select("role, organization_id", "user_id")
+            .eq("user_id", user_id)
+            .maybeSingle();
+
+        if (error || !member) {
+            return res.status(403).json({
+                error: "User does not belong to any organization"
+            });
+        }
+
+        const { data: userData, error: userError } = await supabase
+            .from("user")
+            .select("email")
+            .eq("id", user_id)
+            .maybeSingle();
+
+        if (userError || !userData) {
+            return res.status(403).json({
+                error: "User not found"
+            });
+        }
+
+        req.user = req.user || {};
+        req.user.id = user_id;
+        req.user.role = member?.role;
+        req.user.email = userData?.email;              // admin | legal | member
+        req.user.organizationId = member?.organization_id;
+
+        next();
+    } catch (err) {
+        next(err);
+    }
+};
+
+// middlewares/attachUserContext.js
+const getAttachUserContext = async (req, res, next) => {
+    try {
+
+        const { user_id, email } = req.query;
+
+        if (!user_id && !email) {
+            console.log("Access denied: Both user_id and email are missing");
+            return res.status(401).json({ error: "Access denied" });
+        }
+
+
+        if (!user_id) {
+            return next();
+        }
+
+        const { data: member, error } = await supabase
+            .from("member")
+            .select("role, organization_id", "user_id")
+            .eq("user_id", user_id)
+            .maybeSingle();
+
+        if (error || !member) {
+            return res.status(403).json({
+                error: "User does not belong to any organization"
+            });
+        }
+
+        const { data: userData, error: userError } = await supabase
+            .from("user")
+            .select("email")
+            .eq("id", user_id)
+            .maybeSingle();
+
+        if (userError || !userData) {
+            return res.status(403).json({
+                error: "User not found"
+            });
+        }
+
+        req.user = req.user || {};
+        req.user.id = user_id;
+        req.user.role = member?.role;
+        req.user.email = userData?.email;              // admin | legal | member
+        req.user.organizationId = member?.organization_id;
+
+        next();
+    } catch (err) {
+        next(err);
+    }
+};
+
+export { attachUserContext, getAttachUserContext };
