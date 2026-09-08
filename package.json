@@ -8,8 +8,8 @@
   "main": "server.js",
   "scripts": {
     "postinstall": "prisma generate",
-    "dev": "nodemon server.js",
-    "start": "node server.js",
+    "dev": "node init && nodemon server.js",
+    "start": "node init && node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
